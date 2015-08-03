@@ -13,6 +13,7 @@ using std::string;
 using std::ios;
 using std::vector;
 using std::shared_ptr;
+using std::unique_ptr;
 
 #define subNodeNum 26
 
@@ -190,7 +191,7 @@ int main(int argc, char* argv[]) {
     } 
 
     //create instance of wordTree
-    wordTree wt;
+    unique_ptr<struct wordTree> wt(new wordTree);
 
     //parse file to generate trie
     string str;
@@ -200,7 +201,7 @@ int main(int argc, char* argv[]) {
             return -1;
         }
         const char *cstr = str.c_str();
-        wt.insertWord(cstr, str.length());
+        wt->insertWord(cstr, str.length());
     }
 
     //reset the file pointer to the header of the file
@@ -215,7 +216,7 @@ int main(int argc, char* argv[]) {
     while (inFile >> str) {
         const char *cstr = str.c_str();
         int strLen = str.length();
-        if(wt.checkIfCompound(cstr, strLen)) {
+        if(wt->checkIfCompound(cstr, strLen)) {
             if(strLen >= longestStr.length()) {
                 secondLongestStr = longestStr;
                 longestStr = str;
