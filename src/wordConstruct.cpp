@@ -3,7 +3,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-#include <memory>
 
 using std::ifstream;
 using std::cout;
@@ -12,7 +11,6 @@ using std::queue;
 using std::string;
 using std::ios;
 using std::vector;
-using std::shared_ptr;
 
 #define subNodeNum 26
 
@@ -21,26 +19,27 @@ using std::shared_ptr;
 struct treeNode {
     char x;
     bool isWordEnd;
-    shared_ptr<struct treeNode> children[subNodeNum];
-
+    struct treeNode* children[subNodeNum];
 };
 
 //////////////////////////////////////////////////////////////////////
 //insertWord
 //////////////////////////////////////////////////////////////////////
-void insertWord(shared_ptr<struct treeNode>& root, const char* word, int size) {
-    shared_ptr<struct treeNode> node = root;
+void insertWord(struct treeNode* root, const char* word, int size) {
+    struct treeNode* node = root;
 
     //add the first node under the root
     int index = *word - 0x61;
-    if(node->children[index] != nullptr) {
+    if(node->children[index] != NULL) {
         node = node->children[index];
     } else {
-        //node->children[index] = std::make_shared<treeNode>();
-        node->children[index].reset(new treeNode);
+        node->children[index] = new treeNode;
 
         node = node->children[index];
         node->x = *word;
+        for(int i=0; i<subNodeNum; ++i) {
+            node->children[i] = NULL;
+        }
         node->isWordEnd = false;
     }
     //if the size of the word is 1
@@ -52,13 +51,16 @@ void insertWord(shared_ptr<struct treeNode>& root, const char* word, int size) {
     //add the nodes for the rest of the word
     for(int i=1; i<size; ++i) {
         index = *(word+i) - 0x61;
-        if(node->children[index] != nullptr) {
+        if(node->children[index] != NULL) {
             node = node->children[index];
         } else {
-            node->children[index].reset(new treeNode);
+            node->children[index] = new treeNode;
 
             node = node->children[index];
             node->x = *(word+i);
+            for(int i=0; i<subNodeNum; ++i) {
+                node->children[i] = NULL;
+            }
             node->isWordEnd = false;
         }
     }
@@ -68,13 +70,13 @@ void insertWord(shared_ptr<struct treeNode>& root, const char* word, int size) {
 //////////////////////////////////////////////////////////////////////
 //containString
 //////////////////////////////////////////////////////////////////////
-bool containString(shared_ptr<struct treeNode>& root, const char* cstr, int start, int end, vector<vector<char> >& resultMatrix) {
-    shared_ptr<struct treeNode> node = root;
+bool containString(struct treeNode* root, const char* cstr, int start, int end, vector<vector<char> >& resultMatrix) {
+    struct treeNode* node = root;
 
     //if only one char
     if(start == end) {
         int index = *(cstr + start) - 0x61;
-        if(node->children[index] && node->children[index]->isWordEnd == true) {
+        if(node->children[index] != NULL && node->children[index]->isWordEnd == true) {
             resultMatrix[start][end] = 1;
             return true;
         } else {
@@ -101,7 +103,7 @@ bool containString(shared_ptr<struct treeNode>& root, const char* cstr, int star
     //check the whole substring
     int pos = start;
     int index = *(cstr + pos) - 0x61;
-    while(node->children[index]) {
+    while(node->children[index] != NULL) {
         node = node->children[index];
 
         pos++;
@@ -124,7 +126,7 @@ bool containString(shared_ptr<struct treeNode>& root, const char* cstr, int star
 //////////////////////////////////////////////////////////////////////
 //checkIfCompound
 //////////////////////////////////////////////////////////////////////
-bool checkIfCompound(shared_ptr<struct treeNode>& root, const char* cstr, int size) {
+bool checkIfCompound(struct treeNode* root, const char* cstr, int size) {
     //if the size of the string is 1
     if(size == 1) {
         return false;
@@ -177,7 +179,10 @@ int main(int argc, char* argv[]) {
     } 
 
     //create root node
-    shared_ptr<struct treeNode> root(new treeNode);
+    treeNode* root = new treeNode;
+    for(int i=0; i<subNodeNum; ++i) {
+        root->children[i] = NULL;
+    }
 
     //parse file to generate trie
     string str;
@@ -215,6 +220,23 @@ int main(int argc, char* argv[]) {
 
     //close file
     inFile.close();
+
+    //destroy root
+    queue<struct treeNode*> nodeQueue;
+    nodeQueue.push(root);
+
+    while(nodeQueue.size()) {
+        struct treeNode* node = nodeQueue.front();
+
+        for(int i=0; i<subNodeNum; ++i) {
+            if(node->children[i] != NULL) {
+                nodeQueue.push(node->children[i]);
+            }
+        }
+
+        nodeQueue.pop();
+        delete node;
+    }
 
     //print result
     cout << "Longest String                             : " << longestStr << endl;
